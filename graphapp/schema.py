@@ -8,8 +8,7 @@ from graphql_jwt.shortcuts import create_refresh_token, get_token
 import graphql_jwt
 from django.contrib.auth import get_user_model , authenticate
 from graphene import relay
-import os
-from django.conf import settings
+
 
 
 
@@ -40,18 +39,6 @@ class CommentType(DjangoObjectType):
     class Meta:
         model = Comment
 
-
-
-
-
-# class LogoutUser(graphene.Mutation):
-#     msg = graphene.String()
-    
-#     class Arguments:
-#         token = graphene.String()
-
-#     def mutate(self,info,token):
-        
 
 
 
