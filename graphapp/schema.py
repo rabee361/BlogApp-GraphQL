@@ -146,11 +146,11 @@ class DeleteAuthor(graphene.Mutation):
 
 
 class UpdateAuthor(graphene.Mutation):
+    author = graphene.Field(AuthorType)
+
     class Arguments:
         new_name = graphene.String(required=True)
         id = graphene.ID(required=True)
-
-    author = graphene.Field(AuthorType)
 
     def mutate(self,info,new_name,id):
         try:
@@ -163,6 +163,35 @@ class UpdateAuthor(graphene.Mutation):
             raise Exception(f"Author with {id} doesn't exist")
 
 
+
+class SubscribeToAuthor(graphene.Mutation):
+    user = graphene.Field(UserType)
+    subscribed_authors = graphene.List(AuthorType)
+
+    class Arguments:
+        author_id = graphene.ID(required=True)
+
+    def mutate(self,info,author_id):
+        user = info.context.user
+        author = Author.objects.get(id=author_id)
+        author.subscribers.add(user)
+        subscribed_authors = user.author_set.all()
+        return SubscribeToAuthor(user=user,subscribed_authors=subscribed_authors)
+
+
+
+class UnSubscribe(graphene.Mutation):
+    msg = graphene.String()
+
+    class Arguments:
+        author_id = graphene.ID(required=True)
+
+    def mutate(root,info,author_id):
+        user = info.context.user
+        author = Author.objects.get(id=author_id)
+        author.subscribers.remove(user)
+        return UnSubscribe(msg=f"unsubscibed from the author {author.name}")
+    
 
 ######## Posts ########
         
@@ -246,7 +275,9 @@ class Mutation(graphene.ObjectType):
     revoke_token = graphql_jwt.relay.Revoke.Field()
     create_user = CreateUser.Field()
     login_user = LoginUser.Field()
-    
+    subscribe_to_author = SubscribeToAuthor.Field()
+    unsubscribe = UnSubscribe.Field()
+
     create_author = CreateAuthor.Field()
     update_author = UpdateAuthor.Field()
     delete_author = DeleteAuthor.Field()
@@ -264,11 +295,17 @@ class Mutation(graphene.ObjectType):
 
 
 class Query(graphene.ObjectType):
-    post = graphene.Field(PostType,id=graphene.Int())
     all_posts = DjangoFilterConnectionField(PostType)
+    post = graphene.Field(PostType,id=graphene.Int())
+
     all_authors = graphene.List(AuthorType)
+    author = graphene.Field(AuthorType,id=graphene.Int())
+
     all_comments = graphene.List(CommentType)
-    my_reading_list = graphene.List(ReadingListType)
+    comment = graphene.List(CommentType)
+
+    all_my_reading_lists = graphene.List(ReadingListType)
+    my_reading_list = graphene.Field(ReadingListType,list_id=graphene.ID(required=True))
 
     whoami = graphene.Field(UserType)
     users = graphene.List(UserType)
@@ -300,9 +337,14 @@ class Query(graphene.ObjectType):
             return None
         
 
-    def resolve_my_reading_list(root,info):
+    def resolve_all_my_reading_lists(root,info):
         user = info.context.user
-        reading_list = ReadingList.objects.filter(user=user)
+        reading_lists = ReadingList.objects.filter(user=user)
+        return reading_lists
+
+
+    def resolve_my_reading_list(root,info,list_id):
+        reading_list = ReadingList.objects.get(id=list_id)
         return reading_list
 
 
