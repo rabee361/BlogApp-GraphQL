@@ -12,6 +12,9 @@ from graphene import relay
 
 
 
+#---------------------------------- Model Types -------------------------------------- # 
+
+
 class UserType(DjangoObjectType):
     class Meta:
         model = get_user_model()
@@ -44,26 +47,11 @@ class ReadingListType(DjangoObjectType):
 
 
 
-
-
-class AddToReadingList(graphene.Mutation):
-    reading_list = graphene.Field(ReadingListType)
-
-    class Arguments:
-        post_id = graphene.ID(required=True)
-
-    def mutate(self,info,post_id):
-        post = Post.objects.get(id=post_id)
-        user = info.context.user
-        reading_list = ReadingList.objects.get(user=user)
-        reading_list.posts.add(post)
-        return AddToReadingList(reading_list=reading_list)
+###--------------------------------- Mutations --------------------------------###
 
 
 
-
-
-
+#### Authentication & creating accounts ####
 
 class LoginUser(graphene.Mutation):
     user = graphene.Field(UserType)
@@ -107,40 +95,35 @@ class CreateUser(graphene.Mutation):
 
 
 
-class UpdateAuthor(graphene.Mutation):
+
+class AddToReadingList(graphene.Mutation):
+    reading_list = graphene.Field(ReadingListType)
+
     class Arguments:
-        new_name = graphene.String(required=True)
-        id = graphene.ID(required=True)
+        post_id = graphene.ID(required=True)
+
+    def mutate(self,info,post_id):
+        post = Post.objects.get(id=post_id)
+        user = info.context.user
+        reading_list = ReadingList.objects.get(user=user)
+        reading_list.posts.add(post)
+        return AddToReadingList(reading_list=reading_list)
+
+
+
+
+######## Post Author ########
+
+class CreateAuthor(graphene.Mutation):
+    class Arguments:
+        name = graphene.String(required=True)
 
     author = graphene.Field(AuthorType)
 
-    def mutate(self,info,new_name,id):
-        try:
-            author = Author.objects.get(id=id)
-            author.name = new_name
-            author.save()
-            return UpdateAuthor(author=author)
-        
-        except Author.DoesNotExist:
-            raise Exception(f"Author with {id} doesn't exist")
-
-
-
-
-class DeletePost(graphene.Mutation):
-    class Arguments:
-        id = graphene.ID(required=True)
-
-    message = graphene.String()
-
-    def mutate(self,info,id):
-        try:
-            post = Post.objects.get(id=id)
-            post.delete()
-            return DeletePost(message="Post deleted successfully")
-        
-        except Comment.DoesNotExist:
-            raise Exception("Post doesn't exist")
+    def mutate(self, info, name):
+        author = Author.objects.create(name=name)
+        author.save()
+        return CreateAuthor(author=author)
 
 
 
@@ -162,6 +145,75 @@ class DeleteAuthor(graphene.Mutation):
 
 
 
+class UpdateAuthor(graphene.Mutation):
+    class Arguments:
+        new_name = graphene.String(required=True)
+        id = graphene.ID(required=True)
+
+    author = graphene.Field(AuthorType)
+
+    def mutate(self,info,new_name,id):
+        try:
+            author = Author.objects.get(id=id)
+            author.name = new_name
+            author.save()
+            return UpdateAuthor(author=author)
+        
+        except Author.DoesNotExist:
+            raise Exception(f"Author with {id} doesn't exist")
+
+
+
+######## Posts ########
+        
+class CreatePost(graphene.Mutation):
+    class Arguments:
+        title = graphene.String()
+        content = graphene.String()
+        likes = graphene.Int()
+        author_id = graphene.ID(required=True)
+
+    post = graphene.Field(PostType)
+
+    def mutate(self, info, title , content, likes,author_id):
+        author = Author.objects.get(pk=author_id)
+        post = Post.objects.create(title=title,content=content,author=author,likes=likes)
+        post.save()
+        return CreatePost(post=post)
+
+
+
+class DeletePost(graphene.Mutation):
+    class Arguments:
+        id = graphene.ID(required=True)
+
+    message = graphene.String()
+
+    def mutate(self,info,id):
+        try:
+            post = Post.objects.get(id=id)
+            post.delete()
+            return DeletePost(message="Post deleted successfully")
+        
+        except Comment.DoesNotExist:
+            raise Exception("Post doesn't exist")
+
+
+######## Comments #########
+
+class CreateComment(graphene.Mutation):
+    class Arguments:
+        author_id = graphene.ID(required=True)
+        text = graphene.String()
+
+    comment = graphene.Field(CommentType)
+
+    def mutate(self,info,text,author_id):
+        author = Author.objects.get(id=author_id)
+        comment = Comment.objects.create(text=text,author=author)
+        comment.save()
+        return CreateComment(comment=comment)
+
 
 class DeleteComment(graphene.Mutation):
     class Arguments:
@@ -180,50 +232,8 @@ class DeleteComment(graphene.Mutation):
 
 
 
-class CreatePost(graphene.Mutation):
-    class Arguments:
-        title = graphene.String()
-        content = graphene.String()
-        likes = graphene.Int()
-        author_id = graphene.ID(required=True)
-
-    post = graphene.Field(PostType)
-
-    def mutate(self, info, title , content, likes,author_id):
-        author = Author.objects.get(pk=author_id)
-        post = Post.objects.create(title=title,content=content,author=author,likes=likes)
-        post.save()
-        return CreatePost(post=post)
 
 
-
-class CreateComment(graphene.Mutation):
-    class Arguments:
-        author_id = graphene.ID(required=True)
-        text = graphene.String()
-
-    comment = graphene.Field(CommentType)
-
-    def mutate(self,info,text,author_id):
-        author = Author.objects.get(id=author_id)
-        comment = Comment.objects.create(text=text,author=author)
-        comment.save()
-        return CreateComment(comment=comment)
-
-
-
-
-
-class CreateAuthor(graphene.Mutation):
-    class Arguments:
-        name = graphene.String(required=True)
-
-    author = graphene.Field(AuthorType)
-
-    def mutate(self, info, name):
-        author = Author.objects.create(name=name)
-        author.save()
-        return CreateAuthor(author=author)
 
 
 
@@ -234,19 +244,22 @@ class Mutation(graphene.ObjectType):
     verify_token = graphql_jwt.Verify.Field()
     refresh_token = graphql_jwt.Refresh.Field()
     revoke_token = graphql_jwt.relay.Revoke.Field()
-
+    create_user = CreateUser.Field()
+    login_user = LoginUser.Field()
+    
     create_author = CreateAuthor.Field()
-    create_post = CreatePost.Field()
-    create_comment = CreateComment.Field()
-    delete_post = DeletePost.Field()
-    delete_comment = DeleteComment.Field()
-    delete_author = DeleteAuthor.Field()
     update_author = UpdateAuthor.Field()
+    delete_author = DeleteAuthor.Field()
+
+    create_post = CreatePost.Field()
+    delete_post = DeletePost.Field()
+    
+    create_comment = CreateComment.Field()
+    delete_comment = DeleteComment.Field()
+
     add_to_reading_list = AddToReadingList.Field()
 
 
-    create_user = CreateUser.Field()
-    login_user = LoginUser.Field()
 
 
 
@@ -260,23 +273,25 @@ class Query(graphene.ObjectType):
     whoami = graphene.Field(UserType)
     users = graphene.List(UserType)
 
+
     @login_required
     def resolve_whoami(self, info):
         user = info.context.user
         return user
-    
+
+
     @login_required
     def resolve_users(self, info):
         return get_user_model().objects.all()
 
+
     def resolve_all_authors(root, info):
         return Author.objects.all()
 
-    # def resolve_all_posts(root, info):
-    #     return Post.objects.all()
-    
+
     def resolve_all_comments(root, info):
         return Comment.objects.all()
+
 
     def resolve_post(root, info, id):
         try:
@@ -284,6 +299,7 @@ class Query(graphene.ObjectType):
         except Post.DoesNotExist:
             return None
         
+
     def resolve_my_reading_list(root,info):
         user = info.context.user
         reading_list = ReadingList.objects.filter(user=user)
