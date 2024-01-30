@@ -9,6 +9,7 @@ class ReadingList(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
     name = models.CharField(max_length=100,default="Read List")
     created = models.DateTimeField(auto_now_add=True)
+    posts = models.ManyToManyField('Post')
 
     def save(self, *args, **kwargs):
         if not self.pk:
@@ -50,12 +51,12 @@ class Post(models.Model):
 
 
 class Comment(models.Model):
-    author = models.ForeignKey(Author,on_delete=models.CASCADE)
+    author = models.ForeignKey(User,on_delete=models.CASCADE)
     text = models.TextField()
     likes = models.IntegerField(validators = [MinValueValidator(0)])
     date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.author.name}--{self.id}'
+        return f'{self.author.username}--{self.id}'
 
 

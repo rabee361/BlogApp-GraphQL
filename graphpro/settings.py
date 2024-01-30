@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -55,6 +56,13 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 ]
 
+
+JAZZMIN_SETTINGS = {
+    "site_logo": None,
+    "show_ui_builder" : True,
+    
+
+}
 
 GRAPHENE = {
     'SCHEMA': 'myapp.schema.schema',

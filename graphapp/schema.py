@@ -33,11 +33,34 @@ class AuthorType(DjangoObjectType):
         filterset_class = AuthorFilter
 
     
-
-    
 class CommentType(DjangoObjectType):
     class Meta:
         model = Comment
+
+
+class ReadingListType(DjangoObjectType):
+    class Meta:
+        model = ReadingList
+
+
+
+
+
+class AddToReadingList(graphene.Mutation):
+    reading_list = graphene.Field(ReadingListType)
+
+    class Arguments:
+        post_id = graphene.ID(required=True)
+
+    def mutate(self,info,post_id):
+        post = Post.objects.get(id=post_id)
+        user = info.context.user
+        reading_list = ReadingList.objects.get(user=user)
+        reading_list.posts.add(post)
+        return AddToReadingList(reading_list=reading_list)
+
+
+
 
 
 
@@ -219,6 +242,8 @@ class Mutation(graphene.ObjectType):
     delete_comment = DeleteComment.Field()
     delete_author = DeleteAuthor.Field()
     update_author = UpdateAuthor.Field()
+    add_to_reading_list = AddToReadingList.Field()
+
 
     create_user = CreateUser.Field()
     login_user = LoginUser.Field()
@@ -230,6 +255,7 @@ class Query(graphene.ObjectType):
     all_posts = DjangoFilterConnectionField(PostType)
     all_authors = graphene.List(AuthorType)
     all_comments = graphene.List(CommentType)
+    my_reading_list = graphene.List(ReadingListType)
 
     whoami = graphene.Field(UserType)
     users = graphene.List(UserType)
@@ -257,6 +283,11 @@ class Query(graphene.ObjectType):
             return Post.objects.get(pk=id)
         except Post.DoesNotExist:
             return None
+        
+    def resolve_my_reading_list(root,info):
+        user = info.context.user
+        reading_list = ReadingList.objects.filter(user=user)
+        return reading_list
 
 
 
