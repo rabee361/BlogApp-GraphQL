@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
+from django.contrib.postgres.search import SearchVector ,SearchQuery
+from django.db.models import Count
 
 
 
@@ -35,7 +37,6 @@ class Author(models.Model):
 
 
 
-
 class Post(models.Model):
     author = models.ForeignKey(Author,on_delete=models.CASCADE)
     title = models.CharField(max_length=40)
@@ -44,6 +45,8 @@ class Post(models.Model):
     comments = models.ManyToManyField('Comment')
     date = models.DateTimeField(auto_now_add=True)
     time_to_read = models.IntegerField()
+
+
 
     def __str__(self):
         return f'{self.author.name}--{self.id}'
