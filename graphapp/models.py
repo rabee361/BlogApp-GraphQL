@@ -8,6 +8,7 @@ from django.db.models import Count
 
 
 class ReadingList(models.Model):
+    """ Reading lists the user can add articles to """
     user = models.ForeignKey(User,on_delete=models.CASCADE)
     name = models.CharField(max_length=100,default="Read List")
     created = models.DateTimeField(auto_now_add=True)
@@ -27,6 +28,7 @@ class ReadingList(models.Model):
 
 
 class Author(models.Model):
+    """Author model"""
     name = models.CharField(max_length=100)
     image = models.ImageField(upload_to='media/images')
     joined = models.DateTimeField(auto_now_add=True)
@@ -38,6 +40,7 @@ class Author(models.Model):
 
 
 class Post(models.Model):
+    """Post model"""
     author = models.ForeignKey(Author,on_delete=models.CASCADE)
     title = models.CharField(max_length=40)
     content = models.TextField()
@@ -46,14 +49,13 @@ class Post(models.Model):
     date = models.DateTimeField(auto_now_add=True)
     time_to_read = models.IntegerField()
 
-
-
     def __str__(self):
         return f'{self.author.name}--{self.id}'
 
 
 
 class Comment(models.Model):
+    """Comments model"""
     author = models.ForeignKey(User,on_delete=models.CASCADE)
     text = models.TextField()
     likes = models.IntegerField(validators = [MinValueValidator(0)])

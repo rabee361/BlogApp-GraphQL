@@ -47,9 +47,7 @@ class ReadingListType(DjangoObjectType):
 
 
 
-###--------------------------------- Mutations --------------------------------###
-
-
+#######################------------------ Mutations -----------------------####################
 
 #### Authentication & creating accounts ####
 
@@ -112,7 +110,7 @@ class AddToReadingList(graphene.Mutation):
 
 
 
-######## Post Author ########
+######## Author ########
 
 class CreateAuthor(graphene.Mutation):
     class Arguments:
@@ -191,9 +189,8 @@ class UnSubscribe(graphene.Mutation):
         author = Author.objects.get(id=author_id)
         author.subscribers.remove(user)
         return UnSubscribe(msg=f"unsubscibed from the author {author.name}")
-    
 
-######## Posts ########
+############# Posts #############
         
 class CreatePost(graphene.Mutation):
     class Arguments:
@@ -228,7 +225,7 @@ class DeletePost(graphene.Mutation):
             raise Exception("Post doesn't exist")
 
 
-######## Comments #########
+############# Comments ############
 
 class CreateComment(graphene.Mutation):
     class Arguments:
@@ -269,6 +266,8 @@ class DeleteComment(graphene.Mutation):
 
 
 class Mutation(graphene.ObjectType):
+    """ Mutations are for changes in the app (CRUD operations)"""
+
     token_auth = graphql_jwt.ObtainJSONWebToken.Field()
     verify_token = graphql_jwt.Verify.Field()
     refresh_token = graphql_jwt.Refresh.Field()
@@ -295,6 +294,8 @@ class Mutation(graphene.ObjectType):
 
 
 class Query(graphene.ObjectType):
+    """Basic queries for reading data and controlling its appearence"""
+
     all_posts = DjangoFilterConnectionField(PostType)
     post = graphene.Field(PostType,id=graphene.Int())
 
@@ -348,5 +349,5 @@ class Query(graphene.ObjectType):
         return reading_list
 
 
-
+#### the final step by 
 schema = graphene.Schema(query=Query, mutation=Mutation)
