@@ -311,6 +311,8 @@ class Query(graphene.ObjectType):
     whoami = graphene.Field(UserType)
     users = graphene.List(UserType)
 
+    authors_by_name = DjangoFilterConnectionField(AuthorType) ### filter authors by name
+
 
     @login_required
     def resolve_whoami(self, info):
